@@ -99,3 +99,7 @@ The prototype covers the corpus, the generator and one runner. The kit that the 
 - Sources from network history, and generation under the testnet and mainnet passphrases.
 - A fixed order for the lists of ledger entry changes, which stellar-core writes in a varying order ([stellar-core#5507](https://github.com/stellar/stellar-core/issues/5507)).
 - The comparison with the golden ledgers of stellar-core's own tests (`--check-lcm`).
+
+## License
+
+Apache-2.0. Copyright 2026 BB Strategy Pte. Ltd., which builds the kit as Baking Bad. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).

@@ -385,7 +385,7 @@ Baking Bad maintains the kit for 12 months after release 1.0 and through the fir
 
 **Decentralization.** The kit is a test tool with no running service, so it has nothing to decentralize. Anyone can run the generator on stellar-core and compare the corpus byte by byte.
 
-**License.** Apache-2.0.
+**License.** Apache-2.0. Copyright 2026 BB Strategy Pte. Ltd., which builds the kit as Baking Bad. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
 
 ## Status
 
