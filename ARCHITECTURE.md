@@ -1,13 +1,6 @@
 # Architecture
 
-XDR Coverage Kit is a test kit for software that reads the Stellar ledger: SDKs, indexers and the pipelines of SDF. It answers the RFP "XDR/CAP-Coverage Audit Tool and Indexer-Hardening Guide" of the Stellar Community Fund. It has six parts, and the Status table at the end states what is built and what each tranche adds.
-
-1. Corpus and generator
-2. SDK conformance runner
-3. Replay harness and reference adapter
-4. Indexer-hardening guide
-5. Findings reports
-6. Maintenance through protocol upgrades
+XDR Coverage Kit is a test kit for software that reads the Stellar ledger: SDKs, indexers and the pipelines of SDF. It answers the RFP "XDR/CAP-Coverage Audit Tool and Indexer-Hardening Guide" of the Stellar Community Fund. The Status table at the end states, for each part of the submission, what is built and what each tranche adds.
 
 ## The system
 
@@ -32,7 +25,7 @@ flowchart TB
 
   core -->|ledgers| generator
   generator --> corpus
-  generator -.->|field table| guide
+  corpus -.->|entries| guide
   corpus --> runners
   corpus -.-> harness
   runners -->|calls| sdks
@@ -47,7 +40,7 @@ flowchart TB
   classDef planned stroke-dasharray: 6 4
 ```
 
-The generator builds the corpus from ledgers that stellar-core closes. Runners give the corpus to SDKs, and the harness gives it to indexers. Their failures become findings reports.
+The generator builds the corpus from ledgers that stellar-core closes, and the JS runner gives the corpus to the JavaScript SDK. These two parts are built, and the rest of this paragraph is planned. The Go and Rust runners give the corpus to their SDKs, and the harness gives it to indexers. Every failure in the divergence matrix and in the harness report maps to a filed issue. A findings report lists each issue beside the corpus entry that reproduces it. The indexer-hardening guide is a document for indexer authors. Its field table names corpus entries, and a test in CI checks the table against the manifest.
 
 ## Corpus and generator
 
@@ -140,9 +133,9 @@ The node closes every ledger at a fixed close time, so a source depends neither 
 - `since_protocol` is not above the protocol of the ledger.
 - `soroban_validity` is the answer of `soroban-env-host`.
 
-The network passphrase is a setting of the generator, and the manifest records it. Tranche 1 makes it an option of `generate`, so the same scenarios produce a testnet corpus and a mainnet corpus. A ledger from the history of a network carries the passphrase of that network, so it stands in a corpus of that network. The protocol version is a setting too, so a source can be closed under an earlier protocol for an older indexer, and each source records its protocol.
+The network passphrase is a setting of the generator, and the manifest records it. Tranche 1 makes it an option of `generate`, so the same scenarios produce a testnet corpus and a mainnet corpus. A ledger from the history of a network carries the passphrase of that network, so it stands in a corpus of that network. The protocol version is a setting too, and each source records its protocol. Tranche 2 uses the setting to close sources under an earlier protocol for an older indexer.
 
-stellar-core writes some lists of ledger entry changes in a varying order (stellar-core#5507). Tranche 1 sorts them, so a source holds one fixed order.
+stellar-core writes some lists of ledger entry changes in a varying order (stellar-core#5507). Tranche 1 sorts them at generation, so a source holds one fixed order. From then on the bytes of a source differ from the output of stellar-core only in the order of these lists.
 
 Tranche 1 adds the coverage report, which lists for each CAP the entries that cover its shapes. It is built from the CAP list and the manifest.
 
@@ -214,22 +207,16 @@ flowchart LR
   classDef head fill:none,stroke:none
 ```
 
-The kit has three layers, and each layer is reused by the next:
+A check cuts the bytes of the entry by its byte range and takes its decoded value by its JSON Pointer. These two are its expected values. stellar-core wrote the bytes, and the generator wrote the decoded value with the crate `stellar-xdr`. The JavaScript SDK has its own XDR-JSON code, so its `json` level is an independent check.
 
-| Layer    | Holds                                           | Example                                                                             |
-| -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
-| corpus   | rare data                                       | an operation that names the offer 2^53 + 1                                          |
-| XDR type | the structure of that data                      | `Operation`                                                                         |
-| check    | the SDK functions that work with that structure | the SDK reads the operation and builds it again, with any of its operation builders |
-
-A check cuts the bytes of the entry by its byte range and takes its decoded value by its JSON Pointer. It compares the result of the SDK with both and gives a **verdict**. The **known verdicts** of the SDK release then decide the run.
+The check compares the result of the SDK with both values and gives a **verdict**. The **known verdicts** of the SDK release then decide the run.
 
 ```mermaid
 %%{init: {"flowchart": {"wrappingWidth": 400}}}%%
 flowchart TB
   check["check"]
   sdk(["@stellar/stellar-sdk"])
-  known(["known verdicts<br/>one file per SDK release<br/>kept by the SDK team"])
+  known(["known verdicts<br/>known.json of the runner"])
   listed{{"in known verdicts?"}}
   which{{"verdict?"}}
   same{{"same verdict as listed?"}}
@@ -252,13 +239,17 @@ flowchart TB
 
 ```
 
-Each known verdict states its reason.
+Each known verdict states its reason. The known verdicts are the file `runners/js/known.json` of this repository.
 
-The **divergence matrix** sets the verdicts of the JavaScript, Go and Rust runners side by side for each entry. A divergence is an entry that one SDK keeps and another loses or refuses.
+Tranche 1 adds the **divergence matrix**. It sets the verdicts of the JavaScript, Go and Rust runners side by side for each entry. A divergence is an entry that one SDK keeps and another loses or refuses.
 
 A trial ran the seven entries through the JavaScript SDK, go-stellar-sdk and the Rust crates `stellar-xdr` and `soroban-spec-tools`. All three read every entry and every source and write the same bytes back. It found two failures that the JavaScript runner alone cannot show. The Rust crate `soroban-spec-tools` turns the map with colliding keys into a map of one key, the loss that js-stellar-sdk#1789 fixed in JavaScript. The builder of go-stellar-sdk refuses the transaction with no preconditions, as the JavaScript builder does. Neither is reported upstream.
 
+The Rust runner of tranche 1 reads through `stellar-xdr`, the crate that wrote the decoded values. So its `json` level compares the crate with its own output, and go-stellar-sdk writes no XDR-JSON. The JavaScript runner stays the one independent check at the level `json`.
+
 ## Replay harness and reference adapter
+
+The harness and the adapter are planned: tranche 2 builds them, and tranche 3 adds the second input. This section states their design. Each trial that it names ran outside the repository.
 
 The harness feeds corpus ledgers to an unmodified indexer through an input that existing pipelines already read. It starts the indexer with the passphrase of the corpus, so one corpus serves the SDKs and the indexers. It replays each source alone, into a fresh database where the harness sets the cursor of the indexer to the ledger before the source. So a halt on one entry blocks no other entry.
 
@@ -315,28 +306,13 @@ flowchart TB
   classDef planned stroke-dasharray: 6 4
 ```
 
+The expected indexer result of an entry is the items that a correct indexer stores for it, and it comes from the ledger itself. The generator derives an item from the ledger where a rule gives it, such as a transaction hash or a changed account in the meta. The scenario states an item that needs the meaning of the transaction, and the manifest records both. Tranche 2 decides the format of this record.
+
 A live indexer does not exit, so the adapter stops it when the cursor reaches the target ledger.
 
-The releases of wallet-backend before the three fixes that the RFP names read no ledger of protocol 30. So the kit closes the sources for them under protocol 28, on the same stellar-core 30.0.0.
+The RFP asks the adapter to reproduce wallet-backend#729, #731 and #716 on the commits before their fixes. Those commits read no ledger of protocol 30. So tranche 2 adds sources for them, which the same stellar-core 30.0.0 closes under protocol 28. A trial reproduced the three defects on such ledgers.
 
 A fault of the harness or of the indexer setup gives no result and fails the run. A CI job replays the full corpus under a fixed memory limit.
-
-## Where the expected values come from
-
-| Check                   | Expected value                                        | Origin                                                                                                                                                                                                                                                     |
-| ----------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A check of an SDK       | The bytes of the shape and their decoded value        | The bytes that stellar-core wrote. The crate `stellar-xdr` writes the decoded value, so the Rust `json` level checks that library against itself. The JavaScript SDK reads the decoded value independently.                                                |
-| A result of the harness | The items that a correct indexer stores for the entry | The ledger itself. The generator derives an item from the ledger where a rule gives it, such as a transaction hash or a changed account in the meta. The scenario states an item that needs the meaning of the transaction, and the manifest records both. |
-
-## Indexer-hardening guide
-
-The guide is a document for indexer authors, written for developers.stellar.org. Its outline: validated and unvalidated fields, depth and size caps, participants from the meta, muxed and signed-payload addresses with the SEP-0023 forms, and a checklist. The checklist states the ingestion rules for indexers in any language. It replaces the linter that the RFP asks for, which this proposal leaves out.
-
-The field table says which fields stellar-core validates and which it passes through. A row for a field that stellar-core passes through names the corpus entries where it accepted a rare value in that field. A row for a field that stellar-core validates cites the source of stellar-core. A test in CI checks the table against the manifest.
-
-## Findings reports
-
-A findings report holds one record per finding: the issue link, the corpus entry that reproduces it, severity, the CAP and the component. Every failure in the matrix and in the harness report maps to a filed issue. A defect in one SDK gets a sibling issue in each SDK that shares it. A finding that could halt or corrupt a production pipeline goes first through that project's security policy.
 
 ## Maintenance through protocol upgrades
 
@@ -345,9 +321,9 @@ A findings report holds one record per finding: the issue link, the corpus entry
 | Corpus and generator    | One scenario for each new shape, on the new releases of stellar-core and stellar-xdr.                                                           |
 | SDK conformance runner  | Nothing for a known type. A new type goes through `codec` and `json` at once. A helper needs code only when the type has its own SDK functions. |
 | Replay harness          | A new kind of stored item only when the CAP adds a new kind of stored data.                                                                     |
-| Indexer-hardening guide | New rows in the field table, checked by the same test.                                                                                          |
+| Indexer-hardening guide | New rows in the field table, checked by its test in CI.                                                                                         |
 
-A scheduled CI job reads each new release of the XDR definitions of the protocol and compares it with the coverage report. It opens an issue in this repository for each new CAP or union arm that has no entry. A second scheduled run checks each new SDK release and the current wallet-backend against the corpus.
+Tranche 3 adds two scheduled CI jobs. The first job reads each new release of the XDR definitions of the protocol and compares it with the coverage report. It opens an issue in this repository for each new CAP or union arm that has no entry. The second job checks each new SDK release and the current wallet-backend against the corpus.
 
 Baking Bad maintains the kit for 12 months after release 1.0 and through the first protocol upgrade after delivery. Release 1.0 adds a reusable CI job, so an SDK repository runs the corpus in its own CI with its own known verdicts.
 
@@ -367,23 +343,19 @@ Baking Bad maintains the kit for 12 months after release 1.0 and through the fir
 
 ## Technical stack
 
-| Part                  | Technology                                                                                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Generator and `check` | Rust 1.100.0, edition 2024. The crates `stellar-xdr` 30.0.0 and `soroban-env-host` 30.0.1, pinned exactly. |
-| Local network         | stellar-core 30.0.0. CI takes it from the image `stellar/stellar-core:30.0.0-3642.0e49751aa.noble`.        |
-| Contracts             | Soroban contracts in Rust, built with the Stellar CLI 30.                                                  |
-| JS runner             | TypeScript on Node.js 22.18 or later, `@stellar/stellar-sdk` 17.4.0. CI runs it on Node.js 22 and 26.      |
-| Go and Rust runners   | go-stellar-sdk, and the Rust crates `stellar-xdr` and `soroban-spec-tools`, each at its newest release.    |
-| Reference adapter     | wallet-backend, and PostgreSQL 17 with TimescaleDB 2.28, in containers.                                    |
-| CI                    | GitHub Actions on Ubuntu 24.04.                                                                            |
+| Part                           | Technology                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Generator and `check`          | Rust 1.100.0, edition 2024. The crates `stellar-xdr` 30.0.0 and `soroban-env-host` 30.0.1, pinned exactly. |
+| Local network                  | stellar-core 30.0.0. CI takes it from the image `stellar/stellar-core:30.0.0-3642.0e49751aa.noble`.        |
+| Contracts                      | Soroban contracts in Rust, built with the Stellar CLI 30.                                                  |
+| JS runner                      | TypeScript on Node.js 22.18 or later, `@stellar/stellar-sdk` 17.4.0. CI runs it on Node.js 22 and 26.      |
+| Go and Rust runners, tranche 1 | go-stellar-sdk, and the Rust crates `stellar-xdr` and `soroban-spec-tools`, each at its newest release.    |
+| Reference adapter, tranche 2   | wallet-backend, and PostgreSQL 17 with TimescaleDB 2.28, in containers.                                    |
+| CI                             | GitHub Actions on Ubuntu 24.04.                                                                            |
 
-## Infrastructure, users and license
+## Infrastructure and license
 
 **Infrastructure.** The kit is files and CI jobs in one repository. Every test runs offline, with no access to a Stellar network, no keys and no funds.
-
-**User tracking.** The kit collects no telemetry and tracks no users.
-
-**Decentralization.** The kit is a test tool with no running service, so it has nothing to decentralize. Anyone can run the generator on stellar-core and compare the corpus byte by byte.
 
 **License.** Apache-2.0. Copyright 2026 BB Strategy Pte. Ltd., which builds the kit as Baking Bad. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
 
