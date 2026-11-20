@@ -1,0 +1,17 @@
+{
+  "tx_set_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "close_time": "1000000000",
+  "upgrades": [],
+  "ext": {
+    "empty_tx_set_ms": {
+      "close_time_ms": "1000000000250",
+      "tx_set_hash": "91961ed5aede36d17f8ceb1cdf900430f4fcffd08f5bb26f852b7f80ccf9869b",
+      "previous_ledger_hash": "33a700d7ae6643a68200c634a0b5bb99720652a9842871a35802f15de68f3969",
+      "previous_ledger_version": 30,
+      "lc_value_signature": {
+        "node_id": "GDWUSKGGFDI4FRXK5EBTRECZSVQSSWJHHJOGH6JWG3AUMFFMQ435DIAG",
+        "signature": "b53b5a7e613f681ed884e7628849768c929a5a9c328ce850816d7e4d5b1b1dc05b4d789872756020b6c96e304ef11aefea08e7ee3becf829debd5ec230e4de0e"
+      }
+    }
+  }
+}

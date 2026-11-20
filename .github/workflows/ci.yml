@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  # NOTE: the log of a job is not a terminal, and the runner colors its
+  # verdicts only when asked.
+  FORCE_COLOR: 1
+
+jobs:
+  # The generator passes its lint and its tests, and check passes on the corpus.
+  generator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo run -- check
+
+  # The runner passes its tests on Node.js 22 and 26, and its run on the
+  # installed SDK gives the verdicts of known.json.
+  runner:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        # NOTE: 22 is the oldest Node.js that the runner supports, and 26 is
+        # the newest with long-term support.
+        node: [22, 26]
+    defaults:
+      run:
+        working-directory: runners/js
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm start -- --known known.json
+
+  # The releases before and after the fix of #1789 and #1785 give the verdicts
+  # that the reproduction states.
+  reproductions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: runners/js
+      - run: npm ci
+        working-directory: reproductions/js-stellar-sdk-17.3.0
+      - run: npm start
+        working-directory: reproductions/js-stellar-sdk-17.3.0
+
+  # The generator reproduces the corpus: a new run changes no file.
+  corpus:
+    runs-on: ubuntu-24.04
+    # NOTE: the bound stops a stellar-core that hangs, which would otherwise
+    # hold the job for six hours.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build
+      # NOTE: the image `stellar/stellar-core` holds stellar-core and its
+      # shared libraries, so the generator runs inside it.
+      - name: Generate the corpus inside the stellar-core image
+        run: >
+          docker run --rm --volume "$PWD:/repo" --workdir /repo
+          --entrypoint /repo/target/debug/xdr-coverage-kit
+          stellar/stellar-core:30.0.0-3642.0e49751aa.noble generate
+      - name: Compare the corpus with the files of the new run
+        run: git diff --exit-code corpus

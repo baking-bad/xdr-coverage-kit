@@ -1,0 +1,205 @@
+{
+  "$schema": "manifest.schema.json",
+  "network_passphrase": "Standalone Network ; February 2017",
+  "sources": [
+    {
+      "id": "ledger-contract-call",
+      "xdr_type": "LedgerCloseMeta",
+      "origin": {
+        "stellar_core": {
+          "version": "30.0.0",
+          "ledger_protocol": 30
+        }
+      }
+    },
+    {
+      "id": "ledger-contract-refusal",
+      "xdr_type": "LedgerCloseMeta",
+      "origin": {
+        "stellar_core": {
+          "version": "30.0.0",
+          "ledger_protocol": 30
+        }
+      }
+    },
+    {
+      "id": "ledger-contract-string",
+      "xdr_type": "LedgerCloseMeta",
+      "origin": {
+        "stellar_core": {
+          "version": "30.0.0",
+          "ledger_protocol": 30
+        }
+      }
+    },
+    {
+      "id": "ledger-memo-text",
+      "xdr_type": "LedgerCloseMeta",
+      "origin": {
+        "stellar_core": {
+          "version": "30.0.0",
+          "ledger_protocol": 30
+        }
+      }
+    },
+    {
+      "id": "ledger-offer-update",
+      "xdr_type": "LedgerCloseMeta",
+      "origin": {
+        "stellar_core": {
+          "version": "30.0.0",
+          "ledger_protocol": 30
+        }
+      }
+    },
+    {
+      "id": "value-empty-tx-set",
+      "xdr_type": "StellarValue",
+      "origin": "synthetic"
+    }
+  ],
+  "entries": [
+    {
+      "id": "scval-map-colliding-keys",
+      "description": "A Soroban map can hold two keys that differ only in type and print the same, such as 1 and \"1\".",
+      "caps": [
+        "CAP-0046"
+      ],
+      "since_protocol": 20,
+      "xdr_type": "ScVal",
+      "soroban_validity": "valid",
+      "location": {
+        "source": "ledger-contract-call",
+        "json_pointer": "/v2/tx_processing/0/tx_apply_processing/v4/soroban_meta/return_value",
+        "byte_range": {
+          "offset": 1784,
+          "length": 48
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/js-stellar-sdk/issues/1789"
+      ]
+    },
+    {
+      "id": "scval-map-unsorted-keys",
+      "description": "A failed call keeps its arguments in the ledger, even arguments that the Soroban host refuses.",
+      "caps": [
+        "CAP-0046"
+      ],
+      "since_protocol": 20,
+      "xdr_type": "ScVal",
+      "soroban_validity": "invalid",
+      "location": {
+        "source": "ledger-contract-refusal",
+        "json_pointer": "/v2/tx_set/v1/phases/1/v1/execution_stages/0/0/0/tx/tx/operations/0/body/invoke_host_function/host_function/invoke_contract/args/0",
+        "byte_range": {
+          "offset": 680,
+          "length": 48
+        }
+      },
+      "sightings": []
+    },
+    {
+      "id": "scval-string-non-utf8",
+      "description": "A Soroban string holds any bytes, UTF-8 or not.",
+      "caps": [
+        "CAP-0046"
+      ],
+      "since_protocol": 20,
+      "xdr_type": "ScVal",
+      "soroban_validity": "valid",
+      "location": {
+        "source": "ledger-contract-string",
+        "json_pointer": "/v2/tx_processing/0/tx_apply_processing/v4/soroban_meta/return_value/map/0/val",
+        "byte_range": {
+          "offset": 1784,
+          "length": 12
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/js-stellar-sdk/issues/1823"
+      ]
+    },
+    {
+      "id": "memo-text-non-utf8",
+      "description": "A text memo holds any bytes, UTF-8 or not.",
+      "caps": [],
+      "since_protocol": 0,
+      "xdr_type": "Memo",
+      "soroban_validity": "not_applicable",
+      "location": {
+        "source": "ledger-memo-text",
+        "json_pointer": "/v2/tx_set/v1/phases/0/v0/0/txset_comp_txs_maybe_discounted_fee/txs/0/tx/tx/memo",
+        "byte_range": {
+          "offset": 604,
+          "length": 12
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/js-stellar-sdk/issues/1823"
+      ]
+    },
+    {
+      "id": "transaction-no-preconditions",
+      "description": "A transaction can state no precondition, not even time bounds.",
+      "caps": [
+        "CAP-0015"
+      ],
+      "since_protocol": 13,
+      "xdr_type": "Transaction",
+      "soroban_validity": "not_applicable",
+      "location": {
+        "source": "ledger-memo-text",
+        "json_pointer": "/v2/tx_set/v1/phases/0/v0/0/txset_comp_txs_maybe_discounted_fee/txs/0/tx/tx",
+        "byte_range": {
+          "offset": 552,
+          "length": 88
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/js-stellar-sdk/issues/1911"
+      ]
+    },
+    {
+      "id": "operation-offer-id-above-2-53",
+      "description": "An offer ID is a 64-bit integer, and a 64-bit float cannot hold every integer above 2^53.",
+      "caps": [],
+      "since_protocol": 0,
+      "xdr_type": "Operation",
+      "soroban_validity": "not_applicable",
+      "location": {
+        "source": "ledger-offer-update",
+        "json_pointer": "/v2/tx_set/v1/phases/0/v0/0/txset_comp_txs_maybe_discounted_fee/txs/0/tx/tx/operations/0",
+        "byte_range": {
+          "offset": 612,
+          "length": 80
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/js-stellar-sdk/issues/1785"
+      ]
+    },
+    {
+      "id": "stellar-value-empty-tx-set",
+      "description": "A ledger can close without its transaction set: its value holds a zero tx_set_hash, and the extension holds the hash of the dropped set.",
+      "caps": [
+        "CAP-0083",
+        "CAP-0088"
+      ],
+      "since_protocol": 30,
+      "xdr_type": "StellarValue",
+      "soroban_validity": "not_applicable",
+      "location": {
+        "source": "value-empty-tx-set",
+        "json_pointer": "",
+        "byte_range": {
+          "offset": 0,
+          "length": 228
+        }
+      },
+      "sightings": [
+        "https://github.com/stellar/rs-stellar-archivist/pull/30"
+      ]
+    }
+  ]
+}

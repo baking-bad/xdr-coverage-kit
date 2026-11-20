@@ -1,0 +1,5 @@
+# NOTE: a new standalone network allows 2,000,000 bytes of memory for
+# a transaction. The default stack of 1 MiB makes the Wasm memory 17 pages
+# (1,114,112 bytes), and creating the contract then runs out of memory.
+[target.wasm32v1-none]
+rustflags = ["-C", "link-arg=-zstack-size=65536"]

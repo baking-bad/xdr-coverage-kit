@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest",
+  "description": "The whole manifest. `generate` writes it, and `check` reads it.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "The file name of the JSON Schema of this manifest.",
+      "type": "string"
+    },
+    "network_passphrase": {
+      "description": "The passphrase of the network that signed and closed the ledgers.",
+      "type": "string"
+    },
+    "sources": {
+      "description": "The sources: one XDR value each.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Source"
+      }
+    },
+    "entries": {
+      "description": "The entries: one rare shape each.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Entry"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "network_passphrase",
+    "sources",
+    "entries"
+  ],
+  "$defs": {
+    "Source": {
+      "description": "One XDR value in the files `<id>.xdr` and `<id>.json`.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The name of the source and of its two files.",
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "xdr_type": {
+          "description": "The XDR type of the value.",
+          "type": "string"
+        },
+        "origin": {
+          "description": "Where the bytes come from.",
+          "$ref": "#/$defs/Origin"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "xdr_type",
+        "origin"
+      ]
+    },
+    "Origin": {
+      "description": "Where the bytes of a source come from.",
+      "oneOf": [
+        {
+          "description": "A local stellar-core closed the ledger.",
+          "type": "object",
+          "properties": {
+            "stellar_core": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "description": "The release of stellar-core.",
+                  "type": "string"
+                },
+                "ledger_protocol": {
+                  "description": "The protocol under which the ledger closed.",
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "ledger_protocol"
+              ]
+            }
+          },
+          "required": [
+            "stellar_core"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "The generator built the bytes, and stellar-core did not emit them.",
+          "type": "string",
+          "const": "synthetic"
+        }
+      ]
+    },
+    "Entry": {
+      "description": "One rare shape: a place in a source.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The name of the entry.",
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "description": {
+          "description": "The fact that a reader of the shape must keep.",
+          "type": "string"
+        },
+        "caps": {
+          "description": "The CAPs that introduced the shape, ascending. The list is empty for a shape that the network had at launch.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^CAP-[0-9]{4}$"
+          }
+        },
+        "since_protocol": {
+          "description": "The first protocol under which the network can emit the shape, 0 for a shape that the network had at launch.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "xdr_type": {
+          "description": "The XDR type of the shape.",
+          "type": "string"
+        },
+        "soroban_validity": {
+          "description": "What the Soroban host answers about the shape.",
+          "$ref": "#/$defs/SorobanValidity"
+        },
+        "location": {
+          "description": "The place of the shape in a source.",
+          "$ref": "#/$defs/Location"
+        },
+        "sightings": {
+          "description": "The upstream issues and pull requests where the shape broke a reader.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "caps",
+        "since_protocol",
+        "xdr_type",
+        "soroban_validity",
+        "location",
+        "sightings"
+      ]
+    },
+    "SorobanValidity": {
+      "description": "What the Soroban host, the engine that stellar-core runs, answers about a value.",
+      "oneOf": [
+        {
+          "description": "The host accepts the value.",
+          "type": "string",
+          "const": "valid"
+        },
+        {
+          "description": "The host refuses the value. stellar-core can still write it to a ledger, for example as the argument of a call that fails.",
+          "type": "string",
+          "const": "invalid"
+        },
+        {
+          "description": "The value is not a Soroban value, so the host has no answer.",
+          "type": "string",
+          "const": "not_applicable"
+        }
+      ]
+    },
+    "Location": {
+      "description": "The place of a shape, written in two ways.",
+      "type": "object",
+      "properties": {
+        "source": {
+          "description": "The `id` of the source.",
+          "type": "string"
+        },
+        "json_pointer": {
+          "description": "A JSON Pointer into the decoded source, empty for the whole value.",
+          "type": "string"
+        },
+        "byte_range": {
+          "description": "The same place in the bytes of the source.",
+          "$ref": "#/$defs/ByteRange"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "json_pointer",
+        "byte_range"
+      ]
+    },
+    "ByteRange": {
+      "description": "A range of the bytes of a source: `length` bytes from `offset`.",
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "offset",
+        "length"
+      ]
+    }
+  }
+}

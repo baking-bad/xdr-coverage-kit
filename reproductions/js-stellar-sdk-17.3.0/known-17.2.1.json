@@ -1,0 +1,122 @@
+[
+  {
+    "id": "ledger-contract-call",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-contract-call",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-contract-refusal",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-contract-refusal",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-contract-string",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-contract-string",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-memo-text",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-memo-text",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-offer-update",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "ledger-offer-update",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger"
+  },
+  {
+    "id": "value-empty-tx-set",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger value"
+  },
+  {
+    "id": "value-empty-tx-set",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger value"
+  },
+  {
+    "id": "scval-map-colliding-keys",
+    "check": "scValToNative",
+    "verdict": "lost",
+    "reason": "scValToNative drops one of two keys that print the same (issue https://github.com/stellar/js-stellar-sdk/issues/1789)"
+  },
+  {
+    "id": "scval-string-non-utf8",
+    "check": "union.value",
+    "verdict": "lost",
+    "reason": "union.value reads the string as text, with U+FFFD in place of the byte (issue https://github.com/stellar/js-stellar-sdk/issues/1823)"
+  },
+  {
+    "id": "scval-string-non-utf8",
+    "check": "contract.Spec",
+    "verdict": "lost",
+    "reason": "contract.Spec reads the string as text, with U+FFFD in place of the byte (related issue https://github.com/stellar/js-stellar-sdk/issues/1823)"
+  },
+  {
+    "id": "memo-text-non-utf8",
+    "check": "union.value",
+    "verdict": "lost",
+    "reason": "union.value reads the memo as text, with U+FFFD in place of the byte (issue https://github.com/stellar/js-stellar-sdk/issues/1823)"
+  },
+  {
+    "id": "transaction-no-preconditions",
+    "check": "cloneFrom",
+    "verdict": "refused",
+    "reason": "cloneFrom requires time bounds, and the transaction states no precondition (related issue https://github.com/stellar/js-stellar-sdk/issues/1911)"
+  },
+  {
+    "id": "operation-offer-id-above-2-53",
+    "check": "rebuild(numbers)",
+    "verdict": "lost",
+    "reason": "Operation.manageSellOffer accepts an offer ID above 2^53 as a number, which holds another ID (issue https://github.com/stellar/js-stellar-sdk/issues/1785)"
+  },
+  {
+    "id": "stellar-value-empty-tx-set",
+    "check": "codec",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger value"
+  },
+  {
+    "id": "stellar-value-empty-tx-set",
+    "check": "json",
+    "verdict": "refused",
+    "reason": "17.2.1 is older than protocol 30 and cannot decode the ledger value"
+  }
+]

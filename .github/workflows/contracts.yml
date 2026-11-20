@@ -1,0 +1,24 @@
+name: Contracts
+
+# NOTE: a build of the contracts takes minutes, and their source changes
+# seldom, so the workflow runs only when a contract changes.
+on:
+  push:
+    paths: [contracts/**, .github/workflows/contracts.yml]
+  pull_request:
+    paths: [contracts/**, .github/workflows/contracts.yml]
+
+jobs:
+  # A build of each contract reproduces its Wasm: a new build changes no file.
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: stellar/stellar-cli@v30.0.1
+      - name: Build every contract into contracts/wasm
+        run: |
+          for manifest in contracts/*/Cargo.toml; do
+            (cd "$(dirname "$manifest")" && stellar contract build --out-dir ../wasm)
+          done
+      - name: Compare the Wasm with the new build
+        run: git diff --exit-code contracts

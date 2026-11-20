@@ -1,0 +1,16 @@
+{
+  "name": "reproduction-js-stellar-sdk-17.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "description": "Runs the JS runner on the releases around js-stellar-sdk 17.3.0, which fixes #1789 and #1785",
+  "scripts": {
+    "start": "node reproduce.js"
+  },
+  "dependencies": {
+    "sdk-17.2.1": "npm:@stellar/stellar-sdk@17.2.1",
+    "sdk-17.3.0": "npm:@stellar/stellar-sdk@17.3.0"
+  }
+}
